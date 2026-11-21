@@ -46,34 +46,57 @@ def create_board(cStart, cEnd, side):
             elif side == "right":
                 right_board.append(Grid_Square(column, row, square_size))
 
+
 def create_players(player_board, color):
     start = random.choice(player_board)
     s_length = start.s/10 * 6
     x_cord = start.x + (start.s/2 - s_length/2)
-    y_cord = start.y + (start.s/2 - s_length/2)
-    
+    y_cord = start.y + (start.s/2 - s_length/2) 
     players.append(DicePlayer(x_cord, y_cord, s_length, color))
 
-class Grid_Square:
- def __init__(self, x, y, s):
-     self.x = x
-     self.y = y
-     self.s = s
-     self.tiled = False
+
+# Used for options and grid, but there are no hitboxes on their own
+class Hitbox:
+    def __init__(self, x, y, w, h):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+
+    def checkmousepressed(self):
+        is_x_inside = self.x < mouse_x < self.x + self.w
+        is_y_inside = self.y < mouse_y < self.y + self.h
+        if is_x_inside and is_y_inside:
+            self.clicked()
 
 
- def checkmousepressed(self):
-     is_x_inside = self.x < mouse_x < self.x + self.s
-     is_y_inside = self.y < mouse_y < self.y + self.s
-     if is_x_inside and is_y_inside:
-         self.clicked()
+class Grid_Square(Hitbox):
+    def __init__(self, x, y, s):
+        # hitbox uses w and h so the squares will have those stored a the same as s
+        super().__init__(x, y, s, s)
+        self.s = s
+        self.tiled = False
+
+    def checkmousepressed(self):
+        super().checkmousepressed()
+
+    # will be used for movement later
+    def clicked(self):
+        pass
+
+    def render(self):
+        fill("white")
+        stroke("black")
+        stroke_weight(5)
+        square(self.x, self.y, self.s)
 
 
- def render(self):
-    fill("white")
-    stroke("black")
-    stroke_weight(5)
-    square(self.x, self.y, self.s)
+class MoveOptions(Hitbox):
+    def __init__(self, x, y, w, h, action, cost):
+        super().__init__(x, y, w, h)
+        self.action = action
+        self.cost = cost
+
 
 class DicePlayer:
     def __init__(self, x, y, s, color):
@@ -81,12 +104,13 @@ class DicePlayer:
         self.y = y
         self.s = s
         self.color = color
-        self.num = 6
+        self.num = random.randint(1,6)
 
     def render(self):
         fill(self.color)
         stroke_weight(2)
         square(self.x, self.y, self.s)
+
 
 class Dots:
     def __init__(self, num, dice):
@@ -101,6 +125,9 @@ class Dots:
             y_cord = self.dice.y+(self.dice.s*dot_cords[self.num][i+1])
             radius = self.dice.s*dot_cords[self.num][i+2]
             circle(x_cord, y_cord, radius)
+
+
+
 
 
 
