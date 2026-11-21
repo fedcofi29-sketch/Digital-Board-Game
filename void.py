@@ -4,13 +4,13 @@ screen_width = 800
 screen_height = 640
 board = []
 
-def create_board():
-    square_size = 20
-    for i in range(1, 6):
+def create_board(cStart, cEnd):
+    square_size = 40
+    for i in range(3, 9):
         row = square_size*i+60
-        for j in range (1, 6):
-            column = square_size*j*+40
-            board.append(Grid_Square(row, column, square_size))
+        for j in range (cStart, cEnd):
+            column = square_size*j+40
+            board.append(Grid_Square(column, row, square_size))
 
 
 class Grid_Square:
@@ -33,9 +33,9 @@ class Grid_Square:
     stroke("black")
     stroke_weight(5)
     rect(self.x, self.y, self.s, self.s)
-    print('yay')
 
-create_board()
+create_board(2, 8)
+create_board(9, 15)
 
 def setup():
     size(screen_width, screen_height)
