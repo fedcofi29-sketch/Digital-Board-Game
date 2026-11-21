@@ -22,9 +22,10 @@ def create_board(cStart, cEnd, side):
 
 def create_players(player_board, color):
     start = random.choice(player_board)
-    x_cord = start.x + start.s/10
-    y_cord = start.y + start.s/10
-    s_length = start.s/10 * 8
+    s_length = start.s/10 * 6
+    x_cord = start.x + (start.s/2 - s_length/2)
+    y_cord = start.y + (start.s/2 - s_length/2)
+    
     players.append(DicePlayer(x_cord, y_cord, s_length, color))
 
 class Grid_Square:
@@ -58,6 +59,7 @@ class DicePlayer:
 
     def render(self):
         fill(self.color)
+        stroke_weight(2)
         square(self.x, self.y, self.s)
 
 
