@@ -33,6 +33,7 @@ dot_cords = {
         3/4, 3/4, 1/5],
 }
 dots = []
+options = []
 
 def create_board(cStart, cEnd, side):
     square_size = 40
@@ -97,6 +98,15 @@ class MoveOptions(Hitbox):
         self.action = action
         self.cost = cost
 
+    def render(self):
+        fill(0, 40, 80)
+        stroke_weight(4)
+        text_align("CENTER")
+        rect(self.x, self.y, self.w, self.h)
+        fill("white")
+        text(self.action, self.x+self.w/2, self.y+self.h/4)
+        text(str(self.cost), self.x+self.w/4, self.y+self.h/2)
+
 
 class DicePlayer:
     def __init__(self, x, y, s, color):
@@ -135,9 +145,12 @@ create_board(2, 8, "left")
 create_board(9, 15, "right")
 create_players(left_board, "green")
 create_players(right_board, "orange")
+options.append(MoveOptions(20, 20, 200, 30, "Move orthagonally or diagonally", 1))
 
 def setup():
     size(screen_width, screen_height)
+    arial = create_font("arial.ttf")
+    text_font(arial)
 
 def draw():
     background(0, 20, 60)
@@ -152,6 +165,8 @@ def draw():
     # Idk if this is the cleanest way to store dots
     # In game, they would reset after every move, so maybe there is way to keep it relative to that
     dots.clear()
+    for option in options:
+        option.render()
 
 
 run()
