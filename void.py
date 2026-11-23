@@ -34,6 +34,9 @@ dot_cords = {
 }
 dots = []
 options = []
+# Moves are explained in the rules
+# The names are from my original draft, subject to change
+text_reqs = ["Survey", 1, "Void", 2, "Expand", 3, "Recharge", "Reset and Flip"]
 
 def create_board(cStart, cEnd, side):
     square_size = 40
@@ -55,6 +58,13 @@ def create_players(player_board, color):
     y_cord = start.y + (start.s/2 - s_length/2) 
     players.append(DicePlayer(x_cord, y_cord, s_length, color))
 
+
+def create_options(text_reqs):
+    # Centers on the screen
+    x = screen_width/2 - (120*4+20*3)/2
+    for i in range(0, len(text_reqs), 2):
+        options.append(MoveOptions(x, 80, 120, 60, text_reqs[i], text_reqs[i+1]))
+        x += 140
 
 # Used for options and grid, but there are no hitboxes on their own
 class Hitbox:
@@ -102,10 +112,11 @@ class MoveOptions(Hitbox):
         fill(0, 40, 80)
         stroke_weight(4)
         text_align("CENTER")
+        text_size(15)
         rect(self.x, self.y, self.w, self.h)
         fill("white")
-        text(self.action, self.x+self.w/2, self.y+self.h/4)
-        text(str(self.cost), self.x+self.w/4, self.y+self.h/2)
+        text(self.action, self.x+self.w/2, self.y+self.h/3)
+        text(str(self.cost), self.x+self.w/2, self.y+self.h*2/3)
 
 
 class DicePlayer:
@@ -145,7 +156,8 @@ create_board(2, 8, "left")
 create_board(9, 15, "right")
 create_players(left_board, "green")
 create_players(right_board, "orange")
-options.append(MoveOptions(20, 20, 200, 30, "Move orthagonally or diagonally", 1))
+# Moves are explained in rules
+create_options(text_reqs)
 
 def setup():
     size(screen_width, screen_height)
