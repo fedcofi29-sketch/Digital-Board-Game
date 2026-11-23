@@ -12,6 +12,7 @@ players = []
 # Where the dots should appear relative to the dice size
 dot_cords = {
     #  [multiply x by, mulitply y by, radius]
+    0: [],
     1: [1/2, 1/2, 1/3],
     2: [1/3, 1/3, 1/4,
         2/3, 2/3, 1/4],
@@ -172,46 +173,51 @@ class MoveOptions(Hitbox):
             self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
             if self.action == "Survey":
                 self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
+            if self.action == "Void":
+                self.create_tile_projection(sq_x, sq_y, sq_s, color)
             
-
     # There might be a way to loop through this, but creating each manually is fine
     def create_orthagonal_projections(self, x, y, s, color, cost, side, num):
         # Created in clockwise order starting from top to make it easier to debug
         x1, y1, s1 = center_cords_in_grid(x, y-s, s)
-        if self.cords_in_board(x1, y1, s1, side):
+        if self.cords_in_board(x1, y1, side):
             projections.append(Projections(x1, y1, s1, color, cost, num))
 
         x2, y2, s2 = center_cords_in_grid(x+s, y, s)
-        if self.cords_in_board(x2, y2, s2, side):
+        if self.cords_in_board(x2, y2, side):
             projections.append(Projections(x2, y2, s2, color, cost, num))
 
         x3, y3, s3 = center_cords_in_grid(x, y+s, s)
-        if self.cords_in_board(x3, y3, s3, side):
+        if self.cords_in_board(x3, y3, side):
             projections.append(Projections(x3, y3, s3, color, cost, num))
 
         x4, y4, s4 = center_cords_in_grid(x-s, y, s)
-        if self.cords_in_board(x4, y4, s4, side):
+        if self.cords_in_board(x4, y4, side):
             projections.append(Projections(x4, y4, s4, color, cost, num))
 
     def create_diagonal_projections(self, x, y, s, color, cost, side, num):
             # Created in clockwise order starting from top to make it easier to debug
             x1, y1, s1 = center_cords_in_grid(x+s, y-s, s)
-            if self.cords_in_board(x1, y1, s1, side):
+            if self.cords_in_board(x1, y1, side):
                 projections.append(Projections(x1, y1, s1, color, cost, num))
     
             x2, y2, s2 = center_cords_in_grid(x+s, y+s, s)
-            if self.cords_in_board(x2, y2, s2, side):
+            if self.cords_in_board(x2, y2, side):
                 projections.append(Projections(x2, y2, s2, color, cost, num))
     
             x3, y3, s3 = center_cords_in_grid(x-s, y+s, s)
-            if self.cords_in_board(x3, y3, s3, side):
+            if self.cords_in_board(x3, y3, side):
                 projections.append(Projections(x3, y3, s3, color, cost, num))
     
             x4, y4, s4 = center_cords_in_grid(x-s, y-s, s)
-            if self.cords_in_board(x4, y4, s4, side):
+            if self.cords_in_board(x4, y4, side):
                 projections.append(Projections(x4, y4, s4, color, cost, num))
 
-    def cords_in_board(self, x, y, s, side):
+    # I feel like it will probably be useful in the future to have this as a function even if it is only one line
+    def create_tile_projection(self, x, y, s, color):
+        projections.append(Projections(x, y, s, color, '', ''))
+
+    def cords_in_board(self, x, y, side):
         if side == "left":
             edges = l_b_edges
         elif side == "right":
@@ -244,6 +250,9 @@ class DicePlayer:
     def render(self):
         fill(self.color)
         stroke_weight(2)
+        # For tile projection to look cleaner
+        if self.num == 0:
+            stroke_weight(5)
         square(self.x, self.y, self.s)
 
 
@@ -255,6 +264,9 @@ class Projections(DicePlayer):
         self.num = num
         if isinstance(cost, (int, float)):
             self.num += cost
+        # num = 0 is for tile projections
+        elif cost == '':
+            self.num = 0
         else:
             self.num = 1
 
@@ -307,12 +319,12 @@ def draw():
     for side in board:
         for square in side:
             square.render()
-    for dice in players:
-        dice.render()
-        dots.append(Dots(dice.num, dice))
     for projection in projections:
         projection.render()
         dots.append(Dots(projection.num, projection))
+    for dice in players:
+        dice.render()
+        dots.append(Dots(dice.num, dice)) 
     for dot in dots:
         dot.render()
     # Idk if this is the cleanest way to store dots
