@@ -34,6 +34,8 @@ dot_cords = {
 }
 dots = []
 options = []
+# Only one indicator, so it is just overwritten
+turn_indicator = ''
 # Moves are explained in the rules
 # The names are from my original draft, subject to change
 text_reqs = ["Survey", 1, "Void", 2, "Expand", 3, "Recharge", "Reset and Flip"]
@@ -46,9 +48,9 @@ def create_board(cStart, cEnd, side):
             column = square_size*j+40
             # There is probably a way to shortcut the if/else but this should work for now
             if side == "left":
-                left_board.append(Grid_Square(column, row, square_size))
+                left_board.append(GridSquare(column, row, square_size))
             elif side == "right":
-                right_board.append(Grid_Square(column, row, square_size))
+                right_board.append(GridSquare(column, row, square_size))
 
 
 def create_players(player_board, color):
@@ -59,12 +61,15 @@ def create_players(player_board, color):
     players.append(DicePlayer(x_cord, y_cord, s_length, color))
 
 
-def create_options(text_reqs):
+def create_options_and_indicator(text_reqs):
     # Centers on the screen
-    x = screen_width/2 - (120*4+20*3)/2
+    x = screen_width/2 - (120*4+20*4+60)/2
     for i in range(0, len(text_reqs), 2):
         options.append(MoveOptions(x, 80, 120, 60, text_reqs[i], text_reqs[i+1]))
         x += 140
+    return TurnIndicator(x, 80, 60)
+    
+
 
 # Used for options and grid, but there are no hitboxes on their own
 class Hitbox:
@@ -81,11 +86,12 @@ class Hitbox:
             self.clicked()
 
 
-class Grid_Square(Hitbox):
+class GridSquare(Hitbox):
     def __init__(self, x, y, s):
         # hitbox uses w and h so the squares will have those stored a the same as s
         super().__init__(x, y, s, s)
         self.s = s
+        self.color = "white"
         self.tiled = False
 
     def checkmousepressed(self):
@@ -96,7 +102,7 @@ class Grid_Square(Hitbox):
         pass
 
     def render(self):
-        fill("white")
+        fill(self.color)
         stroke("black")
         stroke_weight(5)
         square(self.x, self.y, self.s)
@@ -111,12 +117,24 @@ class MoveOptions(Hitbox):
     def render(self):
         fill(0, 40, 80)
         stroke_weight(4)
+        stroke("black")
         text_align("CENTER")
         text_size(15)
         rect(self.x, self.y, self.w, self.h)
+        no_stroke()
         fill("white")
         text(self.action, self.x+self.w/2, self.y+self.h/3)
         text(str(self.cost), self.x+self.w/2, self.y+self.h*2/3)
+
+
+# Used gridSquare for init and render despite them having different functions
+class TurnIndicator(GridSquare):
+    def __init__(self, x, y, s):
+        super().__init__(x, y, s)
+        self.color = random.choice(["orange", "green"])
+
+    def render(self):
+        super().render()
 
 
 class DicePlayer:
@@ -151,13 +169,14 @@ class Dots:
 
 
 
-
+# Create all objects
 create_board(2, 8, "left")
 create_board(9, 15, "right")
 create_players(left_board, "green")
 create_players(right_board, "orange")
 # Moves are explained in rules
-create_options(text_reqs)
+# Kind of a messy solution but uses return and list appends to get both
+turn_indicator = create_options_and_indicator(text_reqs)
 
 def setup():
     size(screen_width, screen_height)
@@ -179,6 +198,7 @@ def draw():
     dots.clear()
     for option in options:
         option.render()
+    turn_indicator.render()
 
 
 run()
