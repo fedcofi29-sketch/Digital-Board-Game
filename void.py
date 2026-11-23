@@ -170,6 +170,8 @@ class MoveOptions(Hitbox):
             sq_s = active.square.s
             color = "light" + active.color
             self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
+            if self.action == "Survey":
+                self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
             
 
     # There might be a way to loop through this, but creating each manually is fine
@@ -190,6 +192,24 @@ class MoveOptions(Hitbox):
         x4, y4, s4 = center_cords_in_grid(x-s, y, s)
         if self.cords_in_board(x4, y4, s4, side):
             projections.append(Projections(x4, y4, s4, color, cost, num))
+
+    def create_diagonal_projections(self, x, y, s, color, cost, side, num):
+            # Created in clockwise order starting from top to make it easier to debug
+            x1, y1, s1 = center_cords_in_grid(x+s, y-s, s)
+            if self.cords_in_board(x1, y1, s1, side):
+                projections.append(Projections(x1, y1, s1, color, cost, num))
+    
+            x2, y2, s2 = center_cords_in_grid(x+s, y+s, s)
+            if self.cords_in_board(x2, y2, s2, side):
+                projections.append(Projections(x2, y2, s2, color, cost, num))
+    
+            x3, y3, s3 = center_cords_in_grid(x-s, y+s, s)
+            if self.cords_in_board(x3, y3, s3, side):
+                projections.append(Projections(x3, y3, s3, color, cost, num))
+    
+            x4, y4, s4 = center_cords_in_grid(x-s, y-s, s)
+            if self.cords_in_board(x4, y4, s4, side):
+                projections.append(Projections(x4, y4, s4, color, cost, num))
 
     def cords_in_board(self, x, y, s, side):
         if side == "left":
