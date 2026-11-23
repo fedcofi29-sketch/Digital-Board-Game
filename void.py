@@ -34,6 +34,7 @@ dot_cords = {
 }
 dots = []
 options = []
+projections = []
 # Only one indicator, so it is just overwritten
 turn_indicator = ''
 # Moves are explained in the rules
@@ -55,10 +56,15 @@ def create_board(cStart, cEnd, side):
 
 def create_players(player_board, color):
     start = random.choice(player_board)
-    s_length = start.s/10 * 6
-    x_cord = start.x + (start.s/2 - s_length/2)
-    y_cord = start.y + (start.s/2 - s_length/2) 
-    players.append(DicePlayer(x_cord, y_cord, s_length, color))
+    x, y, s = center_cords_in_grid(start.x, start.y, start.s)
+    players.append(DicePlayer(x, y, s, color, start))
+
+
+def center_cords_in_grid(sq_x, sq_y, sq_s):
+    s_length = sq_s/10 * 6
+    x_cord = sq_x + (sq_s/2 - s_length/2)
+    y_cord = sq_y + (sq_s/2 - s_length/2) 
+    return x_cord, y_cord, s_length
 
 
 def create_options_and_indicator(text_reqs):
@@ -139,8 +145,36 @@ class MoveOptions(Hitbox):
                 nothing_active = False
         if nothing_active:
             self.color = "gray"
-        else:
+            self.create_projections()
+        elif self.color == "gray":
             self.color = "blue"
+            projections.clear()
+
+    def create_projections(self):
+        # Active player matches turn indicator color
+        active = next((dice for dice in players if dice.color == turn_indicator.color), None)
+        if self.action == "Survey" or self.action == "Void":
+            # center_cords_in_grid
+            sq_x = active.square.x
+            sq_y = active.square.y
+            sq_s = active.square.s
+            color = "light" + active.color
+            self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.action)
+            
+
+    # There might be a way to loop through this, but creating each manually is fine
+    def create_orthagonal_projections(self, x, y, s, color, move):
+        x1, y1, s1 = center_cords_in_grid(x+s, y, s)
+        projections.append(Projections(x1, y1, s1, color, move))
+
+        x2, y2, s2 = center_cords_in_grid(x-s, y, s)
+        projections.append(Projections(x2, y2, s2, color, move))
+
+        x3, y3, s3 = center_cords_in_grid(x, y+s, s)
+        projections.append(Projections(x3, y3, s3, color, move))
+
+        x4, y4, s4 = center_cords_in_grid(x, y-s, s)
+        projections.append(Projections(x4, y4, s4, color, move))
 
 
 # Used gridSquare for init and render despite them having different functions
@@ -154,17 +188,32 @@ class TurnIndicator(GridSquare):
 
 
 class DicePlayer:
-    def __init__(self, x, y, s, color):
+    def __init__(self, x, y, s, color, square):
         self.x = x
         self.y = y
         self.s = s
         self.color = color
+        self.square = square
         self.num = random.randint(1,6)
 
     def render(self):
         fill(self.color)
         stroke_weight(2)
         square(self.x, self.y, self.s)
+
+
+# The class itself is pretty simple, most of the work is how they are created
+class Projections(DicePlayer):
+    def __init__(self, x, y, s, color, move):
+        super().__init__(x, y, s, color, '')
+        # Projection shows value after cost or reset
+        if isinstance(move, (int, float)):
+            self.num += move.cost
+        else:
+            self.num = 1
+
+    def render(self):
+        super().render()
 
 
 class Dots:
@@ -221,6 +270,8 @@ def draw():
     dots.clear()
     for option in options:
         option.render()
+    for projection in projections:
+        projection.render()
     turn_indicator.render()
 
 
