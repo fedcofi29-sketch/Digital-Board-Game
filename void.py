@@ -5,6 +5,8 @@ screen_width = 800
 screen_height = 640
 left_board = []
 right_board = []
+l_b_edges = []
+r_b_edges = []
 board = [left_board, right_board]
 players = []
 # Where the dots should appear relative to the dice size
@@ -52,12 +54,20 @@ def create_board(cStart, cEnd, side):
                 left_board.append(GridSquare(column, row, square_size))
             elif side == "right":
                 right_board.append(GridSquare(column, row, square_size))
+    y_low = square_size*3+60
+    y_high = square_size*9+60
+    x_low = square_size*cStart+40
+    x_high = square_size*cEnd+40
+    if side == "left":
+        l_b_edges.extend([x_low, x_high, y_low, y_high])
+    elif side == "right":
+        r_b_edges.extend([x_low, x_high, y_low, y_high])
 
 
-def create_players(player_board, color):
+def create_players(player_board, color, side):
     start = random.choice(player_board)
     x, y, s = center_cords_in_grid(start.x, start.y, start.s)
-    players.append(DicePlayer(x, y, s, color, start))
+    players.append(DicePlayer(x, y, s, color, start, side))
 
 
 def center_cords_in_grid(sq_x, sq_y, sq_s):
@@ -159,41 +169,57 @@ class MoveOptions(Hitbox):
             sq_y = active.square.y
             sq_s = active.square.s
             color = "light" + active.color
-            self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.action)
+            self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.action, active.side)
             
 
     # There might be a way to loop through this, but creating each manually is fine
-    def create_orthagonal_projections(self, x, y, s, color, move):
-        x1, y1, s1 = center_cords_in_grid(x+s, y, s)
-        projections.append(Projections(x1, y1, s1, color, move))
+    def create_orthagonal_projections(self, x, y, s, color, move, side):
+        # Created in clockwise order starting from top to make it easier to debug
+        x1, y1, s1 = center_cords_in_grid(x, y-s, s)
+        if self.cords_in_board(x1, y1, s1, side):
+            projections.append(Projections(x1, y1, s1, color, move))
 
-        x2, y2, s2 = center_cords_in_grid(x-s, y, s)
-        projections.append(Projections(x2, y2, s2, color, move))
+        x2, y2, s2 = center_cords_in_grid(x+s, y, s)
+        if self.cords_in_board(x2, y2, s2, side):
+            projections.append(Projections(x2, y2, s2, color, move))
 
         x3, y3, s3 = center_cords_in_grid(x, y+s, s)
-        projections.append(Projections(x3, y3, s3, color, move))
+        if self.cords_in_board(x3, y3, s3, side):
+            projections.append(Projections(x3, y3, s3, color, move))
 
-        x4, y4, s4 = center_cords_in_grid(x, y-s, s)
-        projections.append(Projections(x4, y4, s4, color, move))
+        x4, y4, s4 = center_cords_in_grid(x-s, y, s)
+        if self.cords_in_board(x4, y4, s4, side):
+            projections.append(Projections(x4, y4, s4, color, move))
 
+    def cords_in_board(self, x, y, s, side):
+        if side == "left":
+            edges = l_b_edges
+        elif side == "right":
+            edges = r_b_edges
+        print(edges, x, y)
+        if edges[0] < x < edges[1] and edges[2] < y < edges[3]:
+            return True
+        else:
+            return False
 
 # Used gridSquare for init and render despite them having different functions
 class TurnIndicator(GridSquare):
     def __init__(self, x, y, s):
         super().__init__(x, y, s)
-        self.color = random.choice(["orange", "green"])
+        self.color = random.choice(["salmon", "green"])
 
     def render(self):
         super().render()
 
 
 class DicePlayer:
-    def __init__(self, x, y, s, color, square):
+    def __init__(self, x, y, s, color, square, side):
         self.x = x
         self.y = y
         self.s = s
         self.color = color
         self.square = square
+        self.side = side
         self.num = random.randint(1,6)
 
     def render(self):
@@ -205,7 +231,7 @@ class DicePlayer:
 # The class itself is pretty simple, most of the work is how they are created
 class Projections(DicePlayer):
     def __init__(self, x, y, s, color, move):
-        super().__init__(x, y, s, color, '')
+        super().__init__(x, y, s, color, '', '')
         # Projection shows value after cost or reset
         if isinstance(move, (int, float)):
             self.num += move.cost
@@ -244,8 +270,9 @@ def mouse_pressed(e):
 # Create all objects
 create_board(2, 8, "left")
 create_board(9, 15, "right")
-create_players(left_board, "green")
-create_players(right_board, "orange")
+create_players(left_board, "green", "left")
+# Salmon is kind of ugly but I needed two colors that had a "light____" variant for projections
+create_players(right_board, "salmon", "right")
 # Moves are explained in rules
 # Kind of a messy solution but uses return and list appends to get both
 turn_indicator = create_options_and_indicator(text_reqs)
@@ -263,15 +290,16 @@ def draw():
     for dice in players:
         dice.render()
         dots.append(Dots(dice.num, dice))
+    for projection in projections:
+        projection.render()
+        dots.append(Dots(projection.num, projection))
     for dot in dots:
         dot.render()
     # Idk if this is the cleanest way to store dots
     # In game, they would reset after every move, so maybe there is way to keep it relative to that
     dots.clear()
     for option in options:
-        option.render()
-    for projection in projections:
-        projection.render()
+        option.render()    
     turn_indicator.render()
 
 
