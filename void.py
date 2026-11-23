@@ -113,9 +113,10 @@ class MoveOptions(Hitbox):
         super().__init__(x, y, w, h)
         self.action = action
         self.cost = cost
+        self.color = "blue"
 
     def render(self):
-        fill(0, 40, 80)
+        fill(self.color)
         stroke_weight(4)
         stroke("black")
         text_align("CENTER")
@@ -125,6 +126,21 @@ class MoveOptions(Hitbox):
         fill("white")
         text(self.action, self.x+self.w/2, self.y+self.h/3)
         text(str(self.cost), self.x+self.w/2, self.y+self.h*2/3)
+
+    def checkmousepressed(self):
+        super().checkmousepressed()
+
+    def clicked(self):
+        # Probably not the most efficient way to filter but it works for now
+        # Worth keeping in mind that this could amount to lag if mulitple functions have to iterate through whole lists
+        nothing_active = True
+        for option in options:
+            if option.color == "gray":
+                nothing_active = False
+        if nothing_active:
+            self.color = "gray"
+        else:
+            self.color = "blue"
 
 
 # Used gridSquare for init and render despite them having different functions
@@ -165,6 +181,13 @@ class Dots:
             radius = self.dice.s*dot_cords[self.num][i+2]
             circle(x_cord, y_cord, radius)
 
+
+def mouse_pressed(e):
+    for option in options:
+        option.checkmousepressed()
+    for side in board:
+        for square in side:
+            square.checkmousepressed()
 
 
 
