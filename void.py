@@ -120,8 +120,12 @@ def update_dice_location(x, y, s, square, num, side):
         turn_indicator.color = "green"
     elif active.color == "green":
         turn_indicator.color = "salmon"
-    active = next((dice for dice in players if dice.color == turn_indicator.color), None)
-    for option in options:       
+    set_option_color()
+
+# This is its own function because it is also for the initial option colors
+def set_option_colors():
+    for option in options:
+        active = next((dice for dice in players if dice.color == turn_indicator.color), None)
         if isinstance(option.cost, (int, float)):
             if active.num + option.cost > 6:
                 option.color = "darkslategray"
@@ -129,7 +133,6 @@ def update_dice_location(x, y, s, square, num, side):
                 option.color = "blue"
         else:
             option.color = "blue"
-
 
 
 # Used for options and grid, but there are no hitboxes on their own
@@ -336,7 +339,7 @@ class DicePlayer:
         self.color = color
         self.square = square
         self.side = side
-        self.num = random.randint(1,6)
+        self.num = random.randint(1, 6)
 
     def render(self):
         fill(self.color)
@@ -401,6 +404,9 @@ create_players(right_board, "salmon", "right")
 # Moves are explained in rules
 # Kind of a messy solution but uses return and list appends to get both
 turn_indicator = create_options_and_indicator(text_reqs)
+# This isn't necessary if both dice start at one, but I kind of want to try the random starts
+# It also just won't do anything if the starting dice is low, so it doesn't really matter
+set_option_colors()
 
 def setup():
     size(screen_width, screen_height)
