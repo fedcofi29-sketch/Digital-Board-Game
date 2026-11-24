@@ -88,6 +88,7 @@ def create_options_and_indicator(text_reqs):
 
 
 def update_dice_location(x, y, s, square, num, side):
+    # Updates all the dice information
     x1, y1, s1 = center_cords_in_grid(x, y, s)
     active = next((dice for dice in players if dice.color == turn_indicator.color), None)
     i = players.index(active)
@@ -98,6 +99,8 @@ def update_dice_location(x, y, s, square, num, side):
     players[i].num = num
     # Update side in case of recharge
     players[i].side = side
+
+    # Sets the grids with projected tiles to tiled
     for projection in projections:
         if projection.type == "tile":
             # Tiles can only be created on the same board as the square that was moved to
@@ -110,14 +113,22 @@ def update_dice_location(x, y, s, square, num, side):
                 j = right_board.index(projection.square)
                 right_board[j].color = turn_indicator.color
                 right_board[j].tiled = True
-            
+
+    # Updates all variables to next turn values
     projections.clear()
     if active.color == "salmon":
         turn_indicator.color = "green"
     elif active.color == "green":
         turn_indicator.color = "salmon"
-    for option in options:
-        option.color = "blue"
+    active = next((dice for dice in players if dice.color == turn_indicator.color), None)
+    for option in options:       
+        if isinstance(option.cost, (int, float)):
+            if active.num + option.cost > 6:
+                option.color = "darkslategray"
+            else:
+                option.color = "blue"
+        else:
+            option.color = "blue"
 
 
 
@@ -191,7 +202,7 @@ class MoveOptions(Hitbox):
         for option in options:
             if option.color == "gray":
                 nothing_active = False
-        if nothing_active:
+        if nothing_active and self.color != "darkslategray":
             self.color = "gray"
             self.create_projections()
         elif self.color == "gray":
