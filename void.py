@@ -164,17 +164,28 @@ class MoveOptions(Hitbox):
     def create_projections(self):
         # Active player matches turn indicator color
         active = next((dice for dice in players if dice.color == turn_indicator.color), None)
+        color = "light" + active.color
         if self.action == "Survey" or self.action == "Void":
-            # center_cords_in_grid
             sq_x = active.square.x
             sq_y = active.square.y
-            sq_s = active.square.s
-            color = "light" + active.color
+            sq_s = active.square.s       
             self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
             if self.action == "Survey":
                 self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
             if self.action == "Void":
                 self.create_tile_projection(sq_x, sq_y, sq_s, color)
+        elif self.action == "Recharge":
+            if active.side == "left":
+                i = left_board.index(active.square)
+                target = right_board[i]
+            if active.side == "right":
+                i = right_board.index(active.square)
+                target = left_board[i]
+            sq_x = target.x
+            sq_y = target.y
+            sq_s = target.s
+            self.create_recharge_projection(sq_x, sq_y, sq_s, color, self.cost)
+            
             
     # There might be a way to loop through this, but creating each manually is fine
     def create_orthagonal_projections(self, x, y, s, color, cost, side, num):
@@ -216,6 +227,11 @@ class MoveOptions(Hitbox):
     # I feel like it will probably be useful in the future to have this as a function even if it is only one line
     def create_tile_projection(self, x, y, s, color):
         projections.append(Projections(x, y, s, color, '', ''))
+
+    def create_recharge_projection(self, x, y, s, color, cost):
+        x1, y1, s1 = center_cords_in_grid(x, y, s)
+        projections.append(Projections(x1, y1, s1, color, cost, ''))
+        
 
     def cords_in_board(self, x, y, side):
         if side == "left":
