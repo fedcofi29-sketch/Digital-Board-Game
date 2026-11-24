@@ -212,21 +212,22 @@ class MoveOptions(Hitbox):
     def create_projections(self):
         # Active player matches turn indicator color
         active = next((dice for dice in players if dice.color == turn_indicator.color), None)
+        other = next((dice for dice in players if dice.color != turn_indicator.color), None)
         color = "light" + active.color
         if self.action == "Survey" or self.action == "Void":
             sq_x = active.square.x
             sq_y = active.square.y
             sq_s = active.square.s       
-            self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
+            self.create_orthagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num, other)
             if self.action == "Survey":
-                self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
+                self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num, other)
             if self.action == "Void":
                 self.create_tile_projection(sq_x, sq_y, sq_s, color, active.square)
         elif self.action == "Recharge":
             if active.side == "left":
                 i = left_board.index(active.square)
                 target = right_board[i]
-            if active.side == "right":
+            elif active.side == "right":
                 i = right_board.index(active.square)
                 target = left_board[i]
             sq_x = target.x
@@ -235,42 +236,40 @@ class MoveOptions(Hitbox):
             self.create_recharge_projection(sq_x, sq_y, sq_s, color, self.cost)
             
             
-    # There might be a way to loop through this, but creating each manually is fine
-    def create_orthagonal_projections(self, x, y, s, color, cost, side, num):
+    # Dice projections is seperate to make it easier to loop. Also used for diagonals
+    def create_orthagonal_projections(self, x, y, s, color, cost, side, num, opposing_dice):
         # Created in clockwise order starting from top to make it easier to debug
-        x1, y1, s1 = center_cords_in_grid(x, y-s, s)
-        if self.cords_in_board(x1, y1, side):
+        self.create_dice_projections(x, y-s, s, color, cost, side, num, opposing_dice)
+        self.create_dice_projections(x+s, y, s, color, cost, side, num, opposing_dice)
+        self.create_dice_projections(x, y+s, s, color, cost, side, num, opposing_dice)
+        self.create_dice_projections(x-s, y, s, color, cost, side, num, opposing_dice)
+    
+    def create_diagonal_projections(self, x, y, s, color, cost, side, num, opposing_dice):
+            # Created in clockwise order starting from topright to make it easier to debug
+            self.create_dice_projections(x+s, y-s, s, color, cost, side, num, opposing_dice)
+            self.create_dice_projections(x+s, y+s, s, color, cost, side, num, opposing_dice)
+            self.create_dice_projections(x-s, y+s, s, color, cost, side, num, opposing_dice)
+            self.create_dice_projections(x-s, y-s, s, color, cost, side, num, opposing_dice)
+
+    def create_dice_projections(self, x, y, s, color, cost, side, num, opposing_dice):
+        x1, y1, s1 = center_cords_in_grid(x, y, s)
+        square = self.find_grid_square_from_cords(x, y, side)
+        if self.check_valid_move(x1, y1, side, square, color, opposing_dice):
             projections.append(Projections(x1, y1, s1, color, cost, num, 'dice', ''))
 
-        x2, y2, s2 = center_cords_in_grid(x+s, y, s)
-        if self.cords_in_board(x2, y2, side):
-            projections.append(Projections(x2, y2, s2, color, cost, num, 'dice', ''))
-
-        x3, y3, s3 = center_cords_in_grid(x, y+s, s)
-        if self.cords_in_board(x3, y3, side):
-            projections.append(Projections(x3, y3, s3, color, cost, num, 'dice', ''))
-
-        x4, y4, s4 = center_cords_in_grid(x-s, y, s)
-        if self.cords_in_board(x4, y4, side):
-            projections.append(Projections(x4, y4, s4, color, cost, num, 'dice', ''))
-
-    def create_diagonal_projections(self, x, y, s, color, cost, side, num):
-            # Created in clockwise order starting from top to make it easier to debug
-            x1, y1, s1 = center_cords_in_grid(x+s, y-s, s)
-            if self.cords_in_board(x1, y1, side):
-                projections.append(Projections(x1, y1, s1, color, cost, num, 'dice', ''))
-    
-            x2, y2, s2 = center_cords_in_grid(x+s, y+s, s)
-            if self.cords_in_board(x2, y2, side):
-                projections.append(Projections(x2, y2, s2, color, cost, num, 'dice', ''))
-    
-            x3, y3, s3 = center_cords_in_grid(x-s, y+s, s)
-            if self.cords_in_board(x3, y3, side):
-                projections.append(Projections(x3, y3, s3, color, cost, num, 'dice', ''))
-    
-            x4, y4, s4 = center_cords_in_grid(x-s, y-s, s)
-            if self.cords_in_board(x4, y4, side):
-                projections.append(Projections(x4, y4, s4, color, cost, num, 'dice', ''))
+    def find_grid_square_from_cords(self, x, y, side):
+        possible_sq = []
+        if side == "left":
+            for sq in left_board:
+                if sq.x == x:
+                    possible_sq.append(sq)
+        elif side == "right":
+            for sq in right_board:
+                if sq.x == x:
+                    possible_sq.append(sq)
+        for squa in possible_sq:
+            if squa.y == y:
+                return squa
 
     # I feel like it will probably be useful in the future to have this as a function even if it is only one line
     def create_tile_projection(self, x, y, s, color, square):
@@ -279,7 +278,12 @@ class MoveOptions(Hitbox):
     def create_recharge_projection(self, x, y, s, color, cost):
         x1, y1, s1 = center_cords_in_grid(x, y, s)
         projections.append(Projections(x1, y1, s1, color, cost, '', 'dice', ''))
-        
+
+    def check_valid_move(self, x, y, side, square, color, opposing_dice):
+        if self.cords_in_board(x, y, side):
+            if self.no_tile_there(square, color):
+                if self.no_opponent_switching_there(opposing_dice, square):
+                    return True
 
     def cords_in_board(self, x, y, side):
         if side == "left":
@@ -291,6 +295,26 @@ class MoveOptions(Hitbox):
         else:
             return False
 
+    def no_tile_there(self, square, color):
+        if square.tiled and square.color != color:
+            return False
+        else:
+            return True
+
+    def no_opponent_switching_there(self, dice, square):
+        if dice.num == 6:
+            if dice.side == "left":
+                i = left_board.index(dice.square)
+                target = right_board[i]
+            elif dice.side == "right":
+                i = right_board.index(dice.square)
+                target = left_board[i]
+            if target == square:
+                return False
+            else:
+                return True
+        else:
+            return True
 
 # Used gridSquare for init and render despite them having different functions
 class TurnIndicator(GridSquare):
