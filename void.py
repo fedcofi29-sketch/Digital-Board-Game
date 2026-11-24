@@ -120,7 +120,7 @@ def update_dice_location(x, y, s, square, num, side):
         turn_indicator.color = "green"
     elif active.color == "green":
         turn_indicator.color = "salmon"
-    set_option_color()
+    set_option_colors()
 
 # This is its own function because it is also for the initial option colors
 def set_option_colors():
@@ -307,17 +307,14 @@ class MoveOptions(Hitbox):
             return True
 
     def no_opponent_switching_there(self, dice, square):
-        if dice.num == 6:
-            if dice.side == "left":
-                i = left_board.index(dice.square)
-                target = right_board[i]
-            elif dice.side == "right":
-                i = right_board.index(dice.square)
-                target = left_board[i]
-            if target == square:
-                return False
-            else:
-                return True
+        if dice.side == "left":
+            i = left_board.index(dice.square)
+            target = right_board[i]
+        elif dice.side == "right":
+            i = right_board.index(dice.square)
+            target = left_board[i]
+        if target == square or dice.square == square:
+            return False
         else:
             return True
 
