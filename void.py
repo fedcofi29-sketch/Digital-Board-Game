@@ -52,9 +52,9 @@ def create_board(cStart, cEnd, side):
             column = square_size*j+40
             # There is probably a way to shortcut the if/else but this should work for now
             if side == "left":
-                left_board.append(GridSquare(column, row, square_size))
+                left_board.append(GridSquare(column, row, square_size, side))
             elif side == "right":
-                right_board.append(GridSquare(column, row, square_size))
+                right_board.append(GridSquare(column, row, square_size, side))
     y_low = square_size*3+60
     y_high = square_size*9+60
     x_low = square_size*cStart+40
@@ -87,7 +87,7 @@ def create_options_and_indicator(text_reqs):
     return TurnIndicator(x, 80, 60)
 
 
-def update_dice_location(x, y, s, square, num):
+def update_dice_location(x, y, s, square, num, side):
     x1, y1, s1 = center_cords_in_grid(x, y, s)
     active = next((dice for dice in players if dice.color == turn_indicator.color), None)
     i = players.index(active)
@@ -96,6 +96,8 @@ def update_dice_location(x, y, s, square, num):
     players[i].s = s1
     players[i].square = square
     players[i].num = num
+    # Update side in case of recharge
+    players[i].side = side
     for projection in projections:
         if projection.type == "tile":
             # Tiles can only be created on the same board as the square that was moved to
@@ -135,12 +137,13 @@ class Hitbox:
 
 
 class GridSquare(Hitbox):
-    def __init__(self, x, y, s):
+    def __init__(self, x, y, s, side):
         # hitbox uses w and h so the squares will have those stored a the same as s
         super().__init__(x, y, s, s)
         self.s = s
         self.color = "white"
         self.tiled = False
+        self.side = side
 
     def checkmousepressed(self):
         super().checkmousepressed()
@@ -150,9 +153,7 @@ class GridSquare(Hitbox):
         for projection in projections:
             if self.x < projection.x < self.x+self.s and self.y < projection.y < self.y+self.s:
                 # This is a global function because I wasn't sure how else to update the dice from within the gridSquare
-                update_dice_location(self.x, self.y, self.s, self, projection.num)
-            
-
+                update_dice_location(self.x, self.y, self.s, self, projection.num, self.side) 
 
     def render(self):
         fill(self.color)
@@ -279,10 +280,11 @@ class MoveOptions(Hitbox):
         else:
             return False
 
+
 # Used gridSquare for init and render despite them having different functions
 class TurnIndicator(GridSquare):
     def __init__(self, x, y, s):
-        super().__init__(x, y, s)
+        super().__init__(x, y, s, '')
         self.color = random.choice(["salmon", "green"])
 
     def render(self):
@@ -350,7 +352,6 @@ def mouse_pressed(e):
     for side in board:
         for square in side:
             square.checkmousepressed()
-
 
 
 
