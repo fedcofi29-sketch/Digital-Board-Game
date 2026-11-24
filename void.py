@@ -296,7 +296,9 @@ class MoveOptions(Hitbox):
             return False
 
     def no_tile_there(self, square, color):
-        if square.tiled and square.color != color:
+        # The color passed through here is the lighter projection color
+        dice_color = color.removeprefix("light")
+        if square.tiled and square.color != dice_color:
             return False
         else:
             return True
