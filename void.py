@@ -96,6 +96,19 @@ def update_dice_location(x, y, s, square, num):
     players[i].s = s1
     players[i].square = square
     players[i].num = num
+    for projection in projections:
+        if projection.type == "tile":
+            # Tiles can only be created on the same board as the square that was moved to
+            # Recharge doesn't create tiles
+            if square in left_board:
+                j = left_board.index(projection.square)
+                left_board[j].color = turn_indicator.color
+                left_board[j].tiled = True
+            elif square in right_board:
+                j = right_board.index(projection.square)
+                right_board[j].color = turn_indicator.color
+                right_board[j].tiled = True
+            
     projections.clear()
     if active.color == "salmon":
         turn_indicator.color = "green"
@@ -196,7 +209,7 @@ class MoveOptions(Hitbox):
             if self.action == "Survey":
                 self.create_diagonal_projections(sq_x, sq_y, sq_s, color, self.cost, active.side, active.num)
             if self.action == "Void":
-                self.create_tile_projection(sq_x, sq_y, sq_s, color)
+                self.create_tile_projection(sq_x, sq_y, sq_s, color, active.square)
         elif self.action == "Recharge":
             if active.side == "left":
                 i = left_board.index(active.square)
@@ -215,45 +228,45 @@ class MoveOptions(Hitbox):
         # Created in clockwise order starting from top to make it easier to debug
         x1, y1, s1 = center_cords_in_grid(x, y-s, s)
         if self.cords_in_board(x1, y1, side):
-            projections.append(Projections(x1, y1, s1, color, cost, num, 'dice'))
+            projections.append(Projections(x1, y1, s1, color, cost, num, 'dice', ''))
 
         x2, y2, s2 = center_cords_in_grid(x+s, y, s)
         if self.cords_in_board(x2, y2, side):
-            projections.append(Projections(x2, y2, s2, color, cost, num, 'dice'))
+            projections.append(Projections(x2, y2, s2, color, cost, num, 'dice', ''))
 
         x3, y3, s3 = center_cords_in_grid(x, y+s, s)
         if self.cords_in_board(x3, y3, side):
-            projections.append(Projections(x3, y3, s3, color, cost, num, 'dice'))
+            projections.append(Projections(x3, y3, s3, color, cost, num, 'dice', ''))
 
         x4, y4, s4 = center_cords_in_grid(x-s, y, s)
         if self.cords_in_board(x4, y4, side):
-            projections.append(Projections(x4, y4, s4, color, cost, num, 'dice'))
+            projections.append(Projections(x4, y4, s4, color, cost, num, 'dice', ''))
 
     def create_diagonal_projections(self, x, y, s, color, cost, side, num):
             # Created in clockwise order starting from top to make it easier to debug
             x1, y1, s1 = center_cords_in_grid(x+s, y-s, s)
             if self.cords_in_board(x1, y1, side):
-                projections.append(Projections(x1, y1, s1, color, cost, num, 'dice'))
+                projections.append(Projections(x1, y1, s1, color, cost, num, 'dice', ''))
     
             x2, y2, s2 = center_cords_in_grid(x+s, y+s, s)
             if self.cords_in_board(x2, y2, side):
-                projections.append(Projections(x2, y2, s2, color, cost, num, 'dice'))
+                projections.append(Projections(x2, y2, s2, color, cost, num, 'dice', ''))
     
             x3, y3, s3 = center_cords_in_grid(x-s, y+s, s)
             if self.cords_in_board(x3, y3, side):
-                projections.append(Projections(x3, y3, s3, color, cost, num, 'dice'))
+                projections.append(Projections(x3, y3, s3, color, cost, num, 'dice', ''))
     
             x4, y4, s4 = center_cords_in_grid(x-s, y-s, s)
             if self.cords_in_board(x4, y4, side):
-                projections.append(Projections(x4, y4, s4, color, cost, num, 'dice'))
+                projections.append(Projections(x4, y4, s4, color, cost, num, 'dice', ''))
 
     # I feel like it will probably be useful in the future to have this as a function even if it is only one line
-    def create_tile_projection(self, x, y, s, color):
-        projections.append(Projections(x, y, s, color, '', '', 'tile'))
+    def create_tile_projection(self, x, y, s, color, square):
+        projections.append(Projections(x, y, s, color, '', '', 'tile', square))
 
     def create_recharge_projection(self, x, y, s, color, cost):
         x1, y1, s1 = center_cords_in_grid(x, y, s)
-        projections.append(Projections(x1, y1, s1, color, cost, '', 'tile'))
+        projections.append(Projections(x1, y1, s1, color, cost, '', 'dice', ''))
         
 
     def cords_in_board(self, x, y, side):
@@ -297,7 +310,7 @@ class DicePlayer:
 
 # The class itself is pretty simple, most of the work is how they are created
 class Projections(DicePlayer):
-    def __init__(self, x, y, s, color, cost, num, type):
+    def __init__(self, x, y, s, color, cost, num, type, square):
         super().__init__(x, y, s, color, '', '')
         # Projection shows value after cost or reset
         self.num = num
@@ -309,6 +322,8 @@ class Projections(DicePlayer):
         else:
             self.num = 1
         self.type = type
+        # Only relevant for tile projections, used to set the grid equal to it
+        self.square = square
 
     def render(self):
         super().render()
